@@ -8,8 +8,19 @@ Compatible with Eco **0.14.2.1** (net10.0).
 
 - Track up to a configurable number of animal species at the same time.
 - Matching animals alive and inside the configured range are highlighted with the game's Master Tracker green silhouette.
-- Highlights refresh continuously and disappear automatically when the animal dies, leaves the range, or is removed from the list.
+- The silhouette is **not blocked by terrain or buildings** - the green outline stays visible through objects as long as the highlight is active (Eco renders `MasterTracker` highlights on the client without occlusion gating; the public ModKit exposes no x-ray toggle, see "Silhouette visibility" below).
+- Highlights refresh continuously every 0.5 s with a 5 s lifetime and disappear automatically when the animal dies, leaves the range, or is removed from the list.
 - Per-player configuration, persisted across server restarts.
+- Server log diagnostics: highlight failures and per-pass counts are written via `Log.Debug` ("HunterTracking: ...") for troubleshooting.
+
+## Silhouette visibility & through-object rendering
+
+Eco's server ModKit only exposes `User.ConstantHighlightSetting.TryAddOrUpdate(...)` with `HighlightPurpose.MasterTracker` (green tracking outline) or `Common`; it provides **no API to toggle occlusion / x-ray / always-visible rendering** (verified against Eco.ReferenceAssemblies 0.14.2.1 - there are no `Occlusion`, `XRay`, `AlwaysVisible`, `Transparent`, `Outline` or renderer hook types). The green outline itself is drawn by the game client and is not occlusion-gated, so a silhouette that is actually active will be visible through terrain, walls and other objects. If an animal behind an object does **not** show a silhouette, that means the highlight entry is not active - check:
+
+1. You have the species tracked (`/ht list` shows "Currently highlighted" count).
+2. The animal is alive and inside your configured range.
+3. Your range is not too large for the game's network visibility - silhouettes require the animal to be loaded/synced on your client, so keep the range reasonable (default 50 m works everywhere).
+4. The server log contains `HunterTracking: N/M highlight updates failed` lines only rarely; repeated failures usually mean the animal is not synced to your client.
 
 ## Commands
 

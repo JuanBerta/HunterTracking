@@ -111,6 +111,7 @@ namespace HunterTracking
             sb.AppendLineLoc($"Visible range: {config.TrackingRange:0} m");
             sb.AppendLineLoc($"Max tracked species: {config.MaxTrackedSpecies}");
             sb.AppendLineLoc($"Max silhouettes at once: {config.MaxHighlightedAnimals}");
+            sb.AppendLineLoc($"Currently highlighted: {HunterTrackingPlugin.Obj.GetActiveHighlightCount(user.Id)}");
             if (config.TrackedSpecies.Count == 0)
             {
                 sb.AppendLine(Localizer.DoStr("Tracked species: none"));
