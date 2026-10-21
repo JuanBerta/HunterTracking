@@ -1,0 +1,47 @@
+# English (base) translations for Hunter Tracking.
+# msgid is the source string; msgstr equals msgid for the base language.
+
+msgid "Mods"
+msgstr "Mods"
+
+msgid "/ht help - this help"
+msgstr "/ht help - this help"
+
+msgid "/ht species - list animal species currently present in the world"
+msgstr "/ht species - list animal species currently present in the world"
+
+msgid "/ht add <animal> - start tracking an animal species"
+msgstr "/ht add <animal> - start tracking an animal species"
+
+msgid "/ht remove <animal> - stop tracking an animal species"
+msgstr "/ht remove <animal> - stop tracking an animal species"
+
+msgid "/ht list - show your tracked species and current settings"
+msgstr "/ht list - show your tracked species and current settings"
+
+msgid "/ht clear - stop tracking everything"
+msgstr "/ht clear - stop tracking everything"
+
+msgid "/ht range <meters> - set the distance at which silhouettes are visible (default 50)"
+msgstr "/ht range <meters> - set the distance at which silhouettes are visible (default 50)"
+
+msgid "/ht limit <count> - set the maximum number of tracked species (default 5)"
+msgstr "/ht limit <count> - set the maximum number of tracked species (default 5)"
+
+msgid "/ht highlightlimit <count> - set the maximum number of silhouettes shown at once (default 10)"
+msgstr "/ht highlightlimit <count> - set the maximum number of silhouettes shown at once (default 10)"
+
+msgid "/ht toggle <on|off> - enable or disable highlighting"
+msgstr "/ht toggle <on|off> - enable or disable highlighting"
+
+msgid "Animal species currently present in the world:"
+msgstr "Animal species currently present in the world:"
+
+msgid "Hunter Tracking settings:"
+msgstr "Hunter Tracking settings:"
+
+msgid "Tracked species: none"
+msgstr "Tracked species: none"
+
+msgid "Tracked species:"
+msgstr "Tracked species:"
