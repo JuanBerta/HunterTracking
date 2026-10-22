@@ -58,15 +58,21 @@ namespace HunterTracking
     /// (World.WrappedDistance / World.ClosestWrappedLocation / Animal.Position /
     /// User.Position).
     ///
-    /// 0.1.5 (this release): the through-object outline now comes from the official
-    /// client asset-bundle channel instead. The server streams Mods/HunterTracking/
-    /// HunterTracking.unity3d (built with Unity 6000.3.6f1 via the official Eco ModKit:
-    /// ModkitPrefabContainer scene + 26 animal prefabs with
+    /// 0.1.6 (this release): the 0.1.5 client asset-bundle override
+    /// (HunterTracking.unity3d: 26 animal prefabs with
     /// ReuseVanillaPrefab.SourceName = species short name + HighlightableObject
-    /// seeThrough = true). The client matches WorldObjects by Type.Name to those prefabs
-    /// and renders the see-through green highlight. The HighlightPurpose.Common pass below
-    /// is kept unchanged as the highlight-entry feed and per-user visibility control
-    /// (range / tracked list / toggle); it no longer needs to be the thing that draws.
+    /// seeThrough = true) made every matching animal invisible on the client, even at
+    /// its exact location, while the entity logic kept running server-side. Root cause:
+    /// the client matched those prefabs as the animal render source, but the
+    /// ReuseVanillaPrefab reuse mechanism does not resolve vanilla animal render assets
+    /// (it resolves vanilla WorldObject prefabs by name, and animals are not
+    /// WorldObjects), so the empty override prefab was rendered instead of the vanilla
+    /// animal - nothing visible. HighlightableObject was not the cause of the
+    /// disappearance (it only adds a highlight marker), but the whole bundle-override
+    /// approach cannot be made safe in the short term, so v0.1.6 reverts the override:
+    /// no .unity3d is shipped, the client renders vanilla animals normally again, and
+    /// the HighlightPurpose.Common pass + /ht locate remain the supported highlight
+    /// fallback (see 0.1.4 research above).
     /// </summary>
     internal class HunterTrackingPlugin : Singleton<HunterTrackingPlugin>, IModKitPlugin, ISaveablePlugin, IThreadedPlugin
     {

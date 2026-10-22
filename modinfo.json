@@ -1,8 +1,8 @@
 {
   "name": "Hunter Tracking",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "ecoVersion": "0.14.2.1",
   "author": "Beinded (JuanBerta)",
   "website": "https://github.com/JuanBerta/HunterTracking",
-  "description": "Track specific animals and see them highlighted with a green see-through silhouette in the real world via a client asset bundle. Add, remove, list or clear tracked species with simple commands, tune the visible range, species limit and highlight limit, and use /ht locate to get live bearing, distance and coordinates of the nearest tracked animal."
+  "description": "Track specific animals and see them highlighted with a green silhouette (HighlightPurpose.Common, no talent needed). Add, remove, list or clear tracked species with simple commands, tune the visible range, species limit and highlight limit, and use /ht locate to get live bearing, distance and coordinates of the nearest tracked animal."
 }
