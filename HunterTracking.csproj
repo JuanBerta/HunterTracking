@@ -5,15 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);CA1416</NoWarn>
-    <!-- 0.1.4: keep AssemblyVersion/FileVersion in sync with the package Version. -->
-    <Version>0.1.7</Version>
-    <AssemblyVersion>0.1.7.0</AssemblyVersion>
-    <FileVersion>0.1.7.0</FileVersion>
+    <!-- 0.1.8: keep AssemblyVersion/FileVersion in sync with the package Version. -->
+    <Version>0.1.8</Version>
+    <AssemblyVersion>0.1.8.0</AssemblyVersion>
+    <FileVersion>0.1.8.0</FileVersion>
   </PropertyGroup>
 
-  <!-- 0.1.6: the EcoModKit Unity project lives at repo root for reference (0.1.5 bundle experiment, reverted) but must not be compiled into the C# mod. -->
+  <!-- 0.1.6: the EcoModKit Unity project lives at repo root for reference (0.1.5 bundle experiment, reverted) but must not be compiled into the C# mod. 0.1.8: exclude the reference example files (attachment research notes). -->
   <ItemGroup>
     <Compile Remove="EcoModKit\**" />
+    <Compile Remove="Example code.cs" />
+    <Compile Remove="Example code 2.cs" />
     <EmbeddedResource Remove="EcoModKit\**" />
     <None Remove="EcoModKit\**" />
     <Content Remove="EcoModKit\**" />

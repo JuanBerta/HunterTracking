@@ -18,7 +18,7 @@ namespace HunterTracking
     [ChatCommandHandler]
     public static class HunterTrackingCommands
     {
-        [ChatCommand("Hunter Tracking commands: track specific animals, see them as green markers on the M-key map and highlighted with a green silhouette inside a configurable range.", "ht")]
+        [ChatCommand("Hunter Tracking commands: track specific animals and see them as personal green map markers on the M-key map and minimap inside a configurable range.", "ht")]
         public static void HunterTracking() { }
 
         [ChatSubCommand(nameof(HunterTracking), "help", ChatAuthorizationLevel.User)]
@@ -31,10 +31,10 @@ namespace HunterTracking
             sb.AppendLine(Localizer.DoStr("/ht remove <animal> - stop tracking an animal species"));
             sb.AppendLine(Localizer.DoStr("/ht list - show your tracked species and current settings"));
             sb.AppendLine(Localizer.DoStr("/ht clear - stop tracking everything"));
-            sb.AppendLine(Localizer.DoStr("/ht range <meters> - set the distance at which map markers and silhouettes are visible (default 50)"));
+            sb.AppendLine(Localizer.DoStr("/ht range <meters> - set the distance at which map markers are visible (default 50)"));
             sb.AppendLine(Localizer.DoStr("/ht limit <count> - set the maximum number of tracked species (default 5)"));
             sb.AppendLine(Localizer.DoStr("/ht highlightlimit <count> - set the maximum number of map markers shown at once (default 10)"));
-            sb.AppendLine(Localizer.DoStr("/ht toggle <on|off> - enable or disable map markers and highlighting"));
+            sb.AppendLine(Localizer.DoStr("/ht toggle <on|off> - enable or disable map markers"));
             sb.AppendLine(Localizer.DoStr("/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when markers are unavailable)"));
             user.Player.MsgLoc($"{sb.ToStringLoc()}", NotificationStyle.Chat);
         }
@@ -111,11 +111,11 @@ namespace HunterTracking
             var config = GetConfig(user);
             var sb = new StringBuilder();
             sb.AppendLine(Localizer.DoStr("Hunter Tracking settings:"));
-            sb.AppendLineLoc($"Highlighting: {(config.HighlightEnabled ? "ON" : "OFF")}");
+            sb.AppendLineLoc($"Markers: {(config.HighlightEnabled ? "ON" : "OFF")}");
             sb.AppendLineLoc($"Visible range: {config.TrackingRange:0} m");
             sb.AppendLineLoc($"Max tracked species: {config.MaxTrackedSpecies}");
-            sb.AppendLineLoc($"Max silhouettes at once: {config.MaxHighlightedAnimals}");
-            sb.AppendLineLoc($"Currently highlighted: {HunterTrackingPlugin.Obj.GetActiveHighlightCount(user.Id)}");
+            sb.AppendLineLoc($"Max markers at once: {config.MaxHighlightedAnimals}");
+            sb.AppendLineLoc($"Currently marked: {HunterTrackingPlugin.Obj.GetActiveMarkerCount(user.Id)}");
             if (config.TrackedSpecies.Count == 0)
             {
                 sb.AppendLine(Localizer.DoStr("Tracked species: none"));
@@ -147,7 +147,7 @@ namespace HunterTracking
             }
             var config = GetConfig(user);
             config.TrackingRange = meters;
-            user.Player.MsgLoc($"Map markers and silhouettes will now be visible within {config.TrackingRange:0} m.", NotificationStyle.Chat);
+            user.Player.MsgLoc($"Map markers will now be visible within {config.TrackingRange:0} m.", NotificationStyle.Chat);
         }
 
         [ChatSubCommand(nameof(HunterTracking), "limit", ChatAuthorizationLevel.User)]
@@ -181,7 +181,7 @@ namespace HunterTracking
         {
             var config = GetConfig(user);
             config.HighlightEnabled = enabled;
-            user.Player.MsgLoc($"Hunter Tracking map markers and highlighting are now {(enabled ? "ON" : "OFF")}.", NotificationStyle.Chat);
+            user.Player.MsgLoc($"Hunter Tracking map markers are now {(enabled ? "ON" : "OFF")}.", NotificationStyle.Chat);
         }
 
         // 0.1.4: client-side custom rendering (Graphics.DrawMesh / CommandBuffer /
