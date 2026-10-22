@@ -22,6 +22,20 @@ Eco's server ModKit only exposes `User.ConstantHighlightSetting.TryAddOrUpdate(.
 3. Your range is not too large for the game's network visibility - silhouettes require the animal to be loaded/synced on your client, so keep the range reasonable (default 50 m works everywhere).
 4. The server log contains `HunterTracking: N/M highlight updates failed` lines only rarely; repeated failures usually mean the animal is not synced to your client.
 
+## 0.1.5: real-world see-through outline via a client asset bundle
+
+0.1.5 ships a client asset bundle (`HunterTracking.unity3d`) built with the official Eco ModKit so that tracked animals get a **green see-through outline in the real world**, visible through terrain, walls and other objects even without the MasterTracker talent. The server-side `HighlightPurpose.Common` channel (0.1.3/0.1.4) is kept as the highlight entry feed; the actual through-object rendering now comes from the bundle.
+
+| Question | Finding |
+| --- | --- |
+| How does the client get mod content? | The Eco client loads asset bundles (`.unity3d`) streamed by the server; it never loads a mod's own C# DLL. `HunterTracking.unity3d` is therefore the only channel that can touch client rendering. |
+| How is the bundle built? | With the official Eco ModKit project (Unity `6000.3.6f1`, exactly the client version) via Unity CLI: `Unity.exe -batchmode -quit -nographics -projectPath <ModKit> -executeMethod HunterTrackingBundleBuilder.Build -outputPath <bundle>`. Building with a Unity editor **higher** than the client version produces an AssetBundle the client rejects. |
+| What is inside? | A `ModkitPrefabContainer` scene with 26 prefabs - one per animal species (Agouti, Alligator, Bass, BighornSheep, Bison, BlueShark, Cod, Coyote, Crab, Deer, Elk, Fox, Hare, Jaguar, MoonJellyfish, MountainGoat, Otter, PacificSardine, PrairieDog, Salmon, SnappingTurtle, Tortoise, Trout, Tuna, Turkey, Wolf). Each prefab uses `ReuseVanillaPrefab.SourceName = <animal short name>` (no vanilla assets embedded, small ~150 KB bundle) plus `HighlightableObject.seeThrough = true`. |
+| How does the client match animals? | The client matches WorldObjects by their `Type.Name` (short name, e.g. `Deer`) to the prefab name in the bundle. A name mismatch fails silently (object stays invisible), which is why the prefabs are named exactly after the AutoGen species names. |
+| Why `seeThrough`? | `HighlightableObject` is the official ModKit marker for client-side highlight rendering; `seeThrough = true` enables the through-object highlight (the server highlight API itself has no occlusion toggle - verified in 0.1.4 research). |
+
+To validate on a live server: install the mod (see below), join as a player **without** the MasterTracker talent, add a species with `/ht add deer` and walk so a tracked deer is behind a building/terrain - it should show a green outline through the obstacle. If it does not, check the client log for bundle load errors (asset bundle version mismatch) and confirm the server `Mods/HunterTracking/` folder contains `HunterTracking.unity3d`.
+
 ## 0.1.4: custom rendering research & `/ht locate` fallback
 
 The goal of 0.1.4 was to render the green silhouette ourselves on the client (through-object visible, no talent, no built-in highlight pipeline). Research against the official ModKit documentation and `Eco.ReferenceAssemblies 0.14.2.1` shows this is **not achievable through official channels**:
@@ -61,7 +75,7 @@ All commands use the `/ht` prefix and require normal user level (no admin rights
 dotnet build -c Release
 ```
 
-The compiled mod lives in `bin/Release/net10.0/`. For installation, zip up the `HunterTracking.dll`, `modinfo.json` and `Locales/` folder and drop the archive into the Eco `Mods` folder.
+The compiled mod lives in `bin/Release/net10.0/`. For installation, zip up the `HunterTracking.dll`, `modinfo.json`, `Locales/` folder **and the client bundle `HunterTracking.unity3d`** (required since 0.1.5 for the see-through outline), then drop the archive into the Eco `Mods` folder. On the server this creates `Mods/HunterTracking/HunterTracking.unity3d`, which the server streams to clients.
 
 ## Credits
 

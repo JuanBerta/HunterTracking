@@ -57,6 +57,16 @@ namespace HunterTracking
     /// tracked animal's bearing, distance and world coordinates using server-side APIs
     /// (World.WrappedDistance / World.ClosestWrappedLocation / Animal.Position /
     /// User.Position).
+    ///
+    /// 0.1.5 (this release): the through-object outline now comes from the official
+    /// client asset-bundle channel instead. The server streams Mods/HunterTracking/
+    /// HunterTracking.unity3d (built with Unity 6000.3.6f1 via the official Eco ModKit:
+    /// ModkitPrefabContainer scene + 26 animal prefabs with
+    /// ReuseVanillaPrefab.SourceName = species short name + HighlightableObject
+    /// seeThrough = true). The client matches WorldObjects by Type.Name to those prefabs
+    /// and renders the see-through green highlight. The HighlightPurpose.Common pass below
+    /// is kept unchanged as the highlight-entry feed and per-user visibility control
+    /// (range / tracked list / toggle); it no longer needs to be the thing that draws.
     /// </summary>
     internal class HunterTrackingPlugin : Singleton<HunterTrackingPlugin>, IModKitPlugin, ISaveablePlugin, IThreadedPlugin
     {
