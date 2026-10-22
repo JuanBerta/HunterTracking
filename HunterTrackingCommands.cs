@@ -3,11 +3,14 @@ using Eco.Gameplay.Systems.Messaging.Chat.Commands;
 using Eco.Shared.Localization;
 using Eco.Shared.Services;
 using Eco.Shared.Utils;
+using Eco.Shared.Voxel;
 using Eco.Simulation.Agents;
 using Eco.Simulation.Animals;
 using Eco.Simulation.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace HunterTracking
@@ -32,6 +35,7 @@ namespace HunterTracking
             sb.AppendLine(Localizer.DoStr("/ht limit <count> - set the maximum number of tracked species (default 5)"));
             sb.AppendLine(Localizer.DoStr("/ht highlightlimit <count> - set the maximum number of silhouettes shown at once (default 10)"));
             sb.AppendLine(Localizer.DoStr("/ht toggle <on|off> - enable or disable highlighting"));
+            sb.AppendLine(Localizer.DoStr("/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable)"));
             user.Player.MsgLoc($"{sb.ToStringLoc()}", NotificationStyle.Chat);
         }
 
@@ -178,6 +182,65 @@ namespace HunterTracking
             var config = GetConfig(user);
             config.HighlightEnabled = enabled;
             user.Player.MsgLoc($"Hunter Tracking highlighting is now {(enabled ? "ON" : "OFF")}.", NotificationStyle.Chat);
+        }
+
+        // 0.1.4: client-side custom rendering (Graphics.DrawMesh / CommandBuffer /
+        // OnRenderObject / custom MonoBehaviour) is not reachable from the public ModKit:
+        // Eco loads only server plugins and streams asset bundles to the client, so there is
+        // no official way to inject client code. As the fallback, /ht locate gives the
+        // player live direction/bearing + distance + world coordinates of the nearest
+        // tracked animal using only server-side, talent-free APIs.
+        [ChatSubCommand(nameof(HunterTracking), "locate", ChatAuthorizationLevel.User)]
+        public static void Locate(User user, string? speciesName = null)
+        {
+            var config = GetConfig(user);
+            var wanted = new HashSet<string>(config.TrackedSpecies, StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(speciesName))
+            {
+                var species = FindSpecies(speciesName);
+                if (species == null)
+                {
+                    user.Player.ErrorLoc($"No animal species matching '{speciesName}' is present in the world. Run /ht species to see what is available.");
+                    return;
+                }
+                wanted = new HashSet<string> { species.Name };
+            }
+
+            if (wanted.Count == 0)
+            {
+                user.Player.ErrorLoc($"You are not tracking any species. Add one with /ht add <animal> first.");
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine(Localizer.DoStr("Nearest tracked animals:"));
+            foreach (var name in wanted)
+            {
+                var animal = AnimalsManager.Obj.Animals
+                    .Where(a => a != null && a.Active && !a.Dead && a.Species != null && a.Species.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(a => World.WrappedDistance(a.Position, user.Position))
+                    .FirstOrDefault();
+
+                if (animal == null)
+                {
+                    sb.AppendLineLoc($" - {name}: no live animal found");
+                    continue;
+                }
+
+                var distance = World.WrappedDistance(animal.Position, user.Position);
+                var closest = World.ClosestWrappedLocation(user.Position, animal.Position);
+                var dx = closest.X - user.Position.X;
+                var dz = closest.Z - user.Position.Z;
+                var bearingDeg = (float)(Math.Atan2(dx, dz) * 180.0 / Math.PI);
+                if (bearingDeg < 0f) bearingDeg += 360f;
+                var compass = new[] { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+                var compassIdx = (int)Math.Round(bearingDeg / 45f) % 8;
+
+                sb.AppendLineLoc($" - {name}: {distance:0} m {compass[compassIdx]} ({bearingDeg:0} deg), at ({animal.Position.X:0}, {animal.Position.Z:0})");
+            }
+            sb.AppendLineLoc($"Your position: ({user.Position.X:0}, {user.Position.Z:0}).");
+            user.Player.MsgLoc($"{sb.ToStringLoc()}", NotificationStyle.Chat);
         }
 
         private static UserConfig GetConfig(User user)

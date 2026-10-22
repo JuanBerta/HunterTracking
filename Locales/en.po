@@ -34,6 +34,12 @@ msgstr "/ht highlightlimit <count> - set the maximum number of silhouettes shown
 msgid "/ht toggle <on|off> - enable or disable highlighting"
 msgstr "/ht toggle <on|off> - enable or disable highlighting"
 
+msgid "/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable)"
+msgstr "/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable)"
+
+msgid "Nearest tracked animals:"
+msgstr "Nearest tracked animals:"
+
 msgid "Animal species currently present in the world:"
 msgstr "Animal species currently present in the world:"
 

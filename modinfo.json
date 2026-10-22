@@ -1,8 +1,8 @@
 {
   "name": "Hunter Tracking",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "ecoVersion": "0.14.2.1",
   "author": "Beinded (JuanBerta)",
   "website": "https://github.com/JuanBerta/HunterTracking",
-  "description": "Track specific animals and see them highlighted with a green silhouette inside a configurable range. Add, remove, list or clear tracked species with simple commands, and tune the visible range, species limit and highlight limit to fit your hunt."
+  "description": "Track specific animals and see them highlighted with a green silhouette inside a configurable range. Add, remove, list or clear tracked species with simple commands, tune the visible range, species limit and highlight limit, and use /ht locate to get live bearing, distance and coordinates of the nearest tracked animal when silhouettes are unavailable."
 }

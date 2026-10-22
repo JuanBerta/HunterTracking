@@ -41,6 +41,22 @@ namespace HunterTracking
     /// still gated by line-of-sight + interaction distance. That cannot express "only the
     /// animals this user tracks", so the per-user ConstantHighlightSetting channel remains
     /// the correct primitive for a tracking mod.
+    ///
+    /// 0.1.4 custom-rendering research (verified 2026-10-21): the public ModKit cannot
+    /// inject client-side code at all. (a) Eco's client loads only asset bundles
+    /// (.unity3d: meshes/icons/animations) streamed by the server; it never loads a mod's
+    /// own C# DLL. (b) There is no IModKitClientPlugin / client-side plugin interface -
+    /// IModKitPlugin / IInitializablePlugin / IShutdownablePlugin / IThreadedPlugin are all
+    /// server-side only. (c) Eco.ReferenceAssemblies 0.14.2.1 contains no Client namespace
+    /// and no assembly references UnityEngine, so Graphics.DrawMesh / CommandBuffer /
+    /// OnRenderObject / custom MonoBehaviour are simply absent from the modding surface.
+    /// (d) BepInEx/Harmony have no supported path because the Eco client ships as a
+    /// self-contained build. Therefore a through-object green silhouette drawn by custom
+    /// client code is NOT achievable through official channels; the practical, supported,
+    /// talent-free fallback shipped in 0.1.4 is /ht locate, which reports the nearest
+    /// tracked animal's bearing, distance and world coordinates using server-side APIs
+    /// (World.WrappedDistance / World.ClosestWrappedLocation / Animal.Position /
+    /// User.Position).
     /// </summary>
     internal class HunterTrackingPlugin : Singleton<HunterTrackingPlugin>, IModKitPlugin, ISaveablePlugin, IThreadedPlugin
     {
