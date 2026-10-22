@@ -18,7 +18,7 @@ namespace HunterTracking
     [ChatCommandHandler]
     public static class HunterTrackingCommands
     {
-        [ChatCommand("Hunter Tracking commands: track specific animals and see them highlighted with a green silhouette inside a configurable range.", "ht")]
+        [ChatCommand("Hunter Tracking commands: track specific animals, see them as green markers on the M-key map and highlighted with a green silhouette inside a configurable range.", "ht")]
         public static void HunterTracking() { }
 
         [ChatSubCommand(nameof(HunterTracking), "help", ChatAuthorizationLevel.User)]
@@ -31,11 +31,11 @@ namespace HunterTracking
             sb.AppendLine(Localizer.DoStr("/ht remove <animal> - stop tracking an animal species"));
             sb.AppendLine(Localizer.DoStr("/ht list - show your tracked species and current settings"));
             sb.AppendLine(Localizer.DoStr("/ht clear - stop tracking everything"));
-            sb.AppendLine(Localizer.DoStr("/ht range <meters> - set the distance at which silhouettes are visible (default 50)"));
+            sb.AppendLine(Localizer.DoStr("/ht range <meters> - set the distance at which map markers and silhouettes are visible (default 50)"));
             sb.AppendLine(Localizer.DoStr("/ht limit <count> - set the maximum number of tracked species (default 5)"));
-            sb.AppendLine(Localizer.DoStr("/ht highlightlimit <count> - set the maximum number of silhouettes shown at once (default 10)"));
-            sb.AppendLine(Localizer.DoStr("/ht toggle <on|off> - enable or disable highlighting"));
-            sb.AppendLine(Localizer.DoStr("/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable)"));
+            sb.AppendLine(Localizer.DoStr("/ht highlightlimit <count> - set the maximum number of map markers shown at once (default 10)"));
+            sb.AppendLine(Localizer.DoStr("/ht toggle <on|off> - enable or disable map markers and highlighting"));
+            sb.AppendLine(Localizer.DoStr("/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when markers are unavailable)"));
             user.Player.MsgLoc($"{sb.ToStringLoc()}", NotificationStyle.Chat);
         }
 
@@ -147,7 +147,7 @@ namespace HunterTracking
             }
             var config = GetConfig(user);
             config.TrackingRange = meters;
-            user.Player.MsgLoc($"Silhouettes will now be visible within {config.TrackingRange:0} m.", NotificationStyle.Chat);
+            user.Player.MsgLoc($"Map markers and silhouettes will now be visible within {config.TrackingRange:0} m.", NotificationStyle.Chat);
         }
 
         [ChatSubCommand(nameof(HunterTracking), "limit", ChatAuthorizationLevel.User)]
@@ -173,7 +173,7 @@ namespace HunterTracking
             }
             var config = GetConfig(user);
             config.MaxHighlightedAnimals = count;
-            user.Player.MsgLoc($"Max silhouettes shown at once set to {config.MaxHighlightedAnimals}.", NotificationStyle.Chat);
+            user.Player.MsgLoc($"Max map markers shown at once set to {config.MaxHighlightedAnimals}.", NotificationStyle.Chat);
         }
 
         [ChatSubCommand(nameof(HunterTracking), "toggle", ChatAuthorizationLevel.User)]
@@ -181,7 +181,7 @@ namespace HunterTracking
         {
             var config = GetConfig(user);
             config.HighlightEnabled = enabled;
-            user.Player.MsgLoc($"Hunter Tracking highlighting is now {(enabled ? "ON" : "OFF")}.", NotificationStyle.Chat);
+            user.Player.MsgLoc($"Hunter Tracking map markers and highlighting are now {(enabled ? "ON" : "OFF")}.", NotificationStyle.Chat);
         }
 
         // 0.1.4: client-side custom rendering (Graphics.DrawMesh / CommandBuffer /

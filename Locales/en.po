@@ -22,20 +22,20 @@ msgstr "/ht list - show your tracked species and current settings"
 msgid "/ht clear - stop tracking everything"
 msgstr "/ht clear - stop tracking everything"
 
-msgid "/ht range <meters> - set the distance at which silhouettes are visible (default 50)"
-msgstr "/ht range <meters> - set the distance at which silhouettes are visible (default 50)"
+msgid "/ht range <meters> - set the distance at which map markers and silhouettes are visible (default 50)"
+msgstr "/ht range <meters> - set the distance at which map markers and silhouettes are visible (default 50)"
 
 msgid "/ht limit <count> - set the maximum number of tracked species (default 5)"
 msgstr "/ht limit <count> - set the maximum number of tracked species (default 5)"
 
-msgid "/ht highlightlimit <count> - set the maximum number of silhouettes shown at once (default 10)"
-msgstr "/ht highlightlimit <count> - set the maximum number of silhouettes shown at once (default 10)"
+msgid "/ht highlightlimit <count> - set the maximum number of map markers shown at once (default 10)"
+msgstr "/ht highlightlimit <count> - set the maximum number of map markers shown at once (default 10)"
 
-msgid "/ht toggle <on|off> - enable or disable highlighting"
-msgstr "/ht toggle <on|off> - enable or disable highlighting"
+msgid "/ht toggle <on|off> - enable or disable map markers and highlighting"
+msgstr "/ht toggle <on|off> - enable or disable map markers and highlighting"
 
-msgid "/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable)"
-msgstr "/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable)"
+msgid "/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when markers are unavailable)"
+msgstr "/ht locate [species] - show distance, bearing and coordinates of the nearest tracked animal (fallback when markers are unavailable)"
 
 msgid "Nearest tracked animals:"
 msgstr "Nearest tracked animals:"

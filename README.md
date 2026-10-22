@@ -1,17 +1,29 @@
 # Hunter Tracking
 
-An [Eco](https://play.eco) mod that helps you find the animals you are hunting. Add animal species to your tracking list and every matching animal near you gets a **green silhouette** outline that is visible only inside a configurable range.
+An [Eco](https://play.eco) mod that helps you find the animals you are hunting. Add animal species to your tracking list and every matching animal near you gets a **green marker on the M-key map** (personal `WorldMarker` layer, updated live) plus a **green silhouette** outline visible inside a configurable range.
 
 Compatible with Eco **0.14.2.1** (net10.0).
 
 ## Features
 
 - Track up to a configurable number of animal species at the same time.
-- Matching animals alive and inside the configured range are highlighted with the game's green tracking silhouette (`HighlightPurpose.Common` - the talent-free channel).
-- Highlights refresh continuously every 0.5 s with an infinite lifetime and disappear automatically when the animal dies, leaves the range, or is removed from the list.
+- Matching animals alive and inside the configured range are shown as **neon-green personal markers on the M-key map** (`WorldMarker`, one marker per animal) that follow the animal live (repositioned every 0.5 s pass).
+- The same animals are highlighted with the game's green tracking silhouette (`HighlightPurpose.Common` - the talent-free channel).
+- Map markers and highlights refresh continuously every 0.5 s with an infinite lifetime and disappear automatically when the animal dies, leaves the range, or is removed from the list.
 - Per-player configuration, persisted across server restarts.
 - Server log diagnostics: highlight failures and per-pass counts are written via `Log.Debug` ("HunterTracking: ...") for troubleshooting.
-- `/ht locate` fallback (added in 0.1.4): live bearing (compass direction + degrees), distance and world coordinates of the nearest tracked animal, so you can still hunt without any silhouette.
+- `/ht locate` fallback (added in 0.1.4): live bearing (compass direction + degrees), distance and world coordinates of the nearest tracked animal, so you can still hunt without any marker/silhouette.
+
+## 0.1.7: M-key map markers
+
+The green silhouette is drawn by the game client only for animals that are synced to your client, so an animal behind terrain/buildings or outside the client's loaded area can show no feedback. 0.1.7 adds a **map layer** that is not affected by line-of-sight: for every tracked animal inside your range, the mod creates a **personal green `WorldMarker`** (the same primitive the game uses for contracts, work orders and player pins) that appears on the in-game **M-key map**. Markers:
+
+- are personal to each player (`WorldMarkerUtils.MakeMarkerPersonal`), so nobody else sees them;
+- follow the animal every 0.5 s pass (`SetPos` on the marker, `Animal.GroundPosition` as the source);
+- show the species name as their label and are capped at the same `MaxHighlightedAnimals` limit as silhouettes;
+- respect the tracking range (`SetMaxDistanceToShow` = configured range) and are removed when the animal dies, leaves the range, is removed from the tracked list, or highlighting is toggled off.
+
+This reuses the `WorldMarker` implementation first shipped in 0.1.2 and reverted in 0.1.3 (back then the requirement was a real-world indicator; `WorldMarker` renders on the M-key map, not in the 3D world - which is exactly the target now). Fixed vs 0.1.2: `SetDisplayOffScreen` is no longer used (its off-screen arrow indicator only made sense for a real-world layer). The `HighlightPurpose.Common` silhouette channel is kept unchanged - it does not conflict with the map markers.
 
 ## Silhouette visibility & through-object rendering
 
@@ -55,11 +67,11 @@ All commands use the `/ht` prefix and require normal user level (no admin rights
 | `/ht remove <animal>` | Stops tracking an animal species. |
 | `/ht list` | Shows your tracked species and current settings. |
 | `/ht clear` | Clears your tracking list. |
-| `/ht range <meters>` | Sets the distance at which silhouettes are visible (default `50`). |
+| `/ht range <meters>` | Sets the distance at which map markers and silhouettes are visible (default `50`). |
 | `/ht limit <count>` | Sets the maximum number of tracked species (default `5`). |
-| `/ht highlightlimit <count>` | Sets the maximum number of silhouettes shown at once (default `10`). |
-| `/ht toggle <on\|off>` | Enables or disables highlighting (default `on`). |
-| `/ht locate [species]` | Shows bearing, distance and coordinates of the nearest tracked animal (fallback when silhouettes are unavailable). |
+| `/ht highlightlimit <count>` | Sets the maximum number of map markers/silhouettes shown at once (default `10`). |
+| `/ht toggle <on\|off>` | Enables or disables map markers and highlighting (default `on`). |
+| `/ht locate [species]` | Shows bearing, distance and coordinates of the nearest tracked animal (fallback when markers are unavailable). |
 
 > Only species that currently exist in the world can be tracked - run `/ht species` first to see what is available.
 
@@ -69,7 +81,7 @@ All commands use the `/ht` prefix and require normal user level (no admin rights
 dotnet build -c Release
 ```
 
-The compiled mod lives in `bin/Release/net10.0/`. For installation, zip up the `HunterTracking.dll`, `modinfo.json` and the `Locales/` folder, then drop the archive into the Eco `Mods` folder (v0.1.6 ships **no** client asset bundle - see the 0.1.6 revert note above).
+The compiled mod lives in `bin/Release/net10.0/`. For installation, zip up the `HunterTracking.dll`, `modinfo.json` and the `Locales/` folder, then drop the archive into the Eco `Mods` folder (v0.1.7 ships **no** client asset bundle - see the 0.1.6 revert note above).
 
 ## Credits
 

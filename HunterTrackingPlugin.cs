@@ -1,6 +1,7 @@
 using Eco.Core.Plugins;
 using Eco.Core.Plugins.Interfaces;
 using Eco.Gameplay.Players;
+using Eco.Gameplay.UI.WorldMarker;
 using Eco.Simulation.Agents;
 using Eco.Simulation.Animals;
 using Eco.Shared.Localization;
@@ -12,15 +13,18 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace HunterTracking
 {
     /// <summary>
     /// Hunter Tracking main plugin. Every server tick (throttled) it walks all online users,
-    /// reads their tracked species list and maintains a talent-free silhouette highlight on
-    /// the matching animals that are alive, active and inside the configured range. Animals
-    /// that no longer match are un-highlighted on the next pass.
+    /// reads their tracked species list and maintains, for every matching animal that is
+    /// alive, active and inside the configured range:
+    ///  1. a talent-free silhouette highlight on the animal (HighlightPurpose.Common), and
+    ///  2. a personal green map marker (WorldMarker) rendered on the in-game M-key map.
+    /// Animals that no longer match are un-highlighted / un-marked on the next pass.
     ///
     /// Rendering note (verified against Eco.ReferenceAssemblies 0.14.2.1 + official ModKit
     /// docs): ConstantHighlightSetting is the only server-side highlight channel; it is a
@@ -31,6 +35,22 @@ namespace HunterTracking
     /// (the enum value explicitly documented as the generic, non-talent purpose) with
     /// timeToHighlight &lt;= 0 (infinite): the client renders the silhouette immediately for
     /// every user and keeps it until TryRemove is called.
+    ///
+    /// 0.1.7 map-marker layer: a green silhouette can be hidden by line-of-sight / client
+    /// sync limitations, so 0.1.7 (re)introduces the personal WorldMarker layer first
+    /// shipped in 0.1.2 and reverted in 0.1.3 (because at the time the requirement was a
+    /// real-world indicator - WorldMarker renders on the M-key map, not in the world).
+    /// For 0.1.7 the requirement is exactly that map layer: every tracked animal inside
+    /// range gets a personal neon-green marker on the M-key map that follows the animal
+    /// (SetPos every pass), shows the species name, and is removed when the animal dies,
+    /// leaves the range, is removed from the tracked list or highlighting is turned off.
+    /// Fixed vs 0.1.2: SetDisplayOffScreen is NOT used anymore - the off-screen arrow
+    /// indicator was meant for a real-world layer and would be noise now that the marker
+    /// is a pure map-layer feature; all other fields (SetPos, SetColor, SetDisplayText,
+    /// SetDisplayName, SetMaxDistanceToShow, MakeMarkerPersonal, MarkerFolderName.None)
+    /// match the 0.1.2 implementation that was verified working on the map.
+    /// The HighlightPurpose.Common silhouette channel is retained: it does not conflict
+    /// with the map markers and keeps the 0.1.6 behaviour fully unchanged.
     ///
     /// Interaction-channel note (investigated for 0.1.3): the green silhouette shown on
     /// interactable objects is driven by ServerInteractionManager's registration tables
@@ -58,7 +78,7 @@ namespace HunterTracking
     /// (World.WrappedDistance / World.ClosestWrappedLocation / Animal.Position /
     /// User.Position).
     ///
-    /// 0.1.6 (this release): the 0.1.5 client asset-bundle override
+    /// 0.1.6 (previous release): the 0.1.5 client asset-bundle override
     /// (HunterTracking.unity3d: 26 animal prefabs with
     /// ReuseVanillaPrefab.SourceName = species short name + HighlightableObject
     /// seeThrough = true) made every matching animal invisible on the client, even at
@@ -72,7 +92,8 @@ namespace HunterTracking
     /// approach cannot be made safe in the short term, so v0.1.6 reverts the override:
     /// no .unity3d is shipped, the client renders vanilla animals normally again, and
     /// the HighlightPurpose.Common pass + /ht locate remain the supported highlight
-    /// fallback (see 0.1.4 research above).
+    /// fallback (see 0.1.4 research above). 0.1.7 keeps that revert and adds the
+    /// M-key map marker layer described above.
     /// </summary>
     internal class HunterTrackingPlugin : Singleton<HunterTrackingPlugin>, IModKitPlugin, ISaveablePlugin, IThreadedPlugin
     {
@@ -88,6 +109,8 @@ namespace HunterTracking
         // be removed when an animal leaves the range, dies or is removed from the tracked
         // list.
         private readonly Dictionary<int, HashSet<Animal>> activeHighlights = new();
+        // Per-user map markers (WorldMarker) keyed by animal ID, mirroring activeHighlights.
+        private readonly Dictionary<int, Dictionary<int, WorldMarker>> activeMarkers = new();
         private readonly object highlightsLock = new();
 
         public HunterTrackingPlugin()
@@ -162,6 +185,7 @@ namespace HunterTracking
                 {
                     if (!setting.TryAddOrUpdate(candidate.Animal, HighlightPurpose.Common, InfiniteHighlightDuration))
                         failures++;
+                    UpdateMarker(user, candidate.Animal, range);
                 }
 
                 HashSet<Animal>? previous;
@@ -174,7 +198,10 @@ namespace HunterTracking
                     foreach (var animal in previous)
                     {
                         if (!toHighlight.Contains(animal))
+                        {
                             setting.TryRemove(animal, HighlightPurpose.Common);
+                            RemoveMarker(user, animal);
+                        }
                     }
                 }
                 lock (highlightsLock)
@@ -191,20 +218,115 @@ namespace HunterTracking
                 Log.Debug($"HunterTracking: pass complete, {totalHighlighted} animal(s) highlighted.");
         }
 
+        private void UpdateMarker(User user, Animal animal, float range)
+        {
+            var player = user.Player;
+            if (player == null || user.Markers == null)
+                return;
+
+            var speciesName = animal.Species?.Name ?? "Animal";
+            var pos = ToVector3i(animal.GroundPosition);
+
+            lock (highlightsLock)
+            {
+                if (!activeMarkers.TryGetValue(user.Id, out var perUser))
+                {
+                    perUser = new Dictionary<int, WorldMarker>();
+                    activeMarkers[user.Id] = perUser;
+                }
+
+                if (perUser.TryGetValue(animal.ID, out var existing))
+                {
+                    try
+                    {
+                        existing.SetPos(player, pos);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug($"HunterTracking: marker reposition failed for {speciesName}: {ex.Message}");
+                    }
+                    return;
+                }
+
+                WorldMarker? marker = null;
+                try
+                {
+                    marker = user.Markers.Add(user, pos, speciesName, false, false, MarkerFolderName.None);
+                    if (marker == null)
+                        return;
+                    marker.SetColor(player, Color.NeonGreen);
+                    marker.SetDisplayDistance(player, false);
+                    marker.SetDisplayText(player, true);
+                    marker.SetDisplayName(player, speciesName);
+                    marker.SetMaxDistanceToShow(player, range);
+                    WorldMarkerUtils.MakeMarkerPersonal(user, marker);
+                    perUser[animal.ID] = marker;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug($"HunterTracking: marker creation failed for {speciesName}: {ex.Message}");
+                    if (marker != null)
+                    {
+                        try { marker.Remove(player); } catch { }
+                    }
+                }
+            }
+        }
+
+        private void RemoveMarker(User user, Animal animal)
+        {
+            var player = user.Player;
+            if (player == null || user.Markers == null)
+                return;
+
+            WorldMarker? marker;
+            lock (highlightsLock)
+            {
+                if (!activeMarkers.TryGetValue(user.Id, out var perUser))
+                    return;
+                if (!perUser.TryGetValue(animal.ID, out marker))
+                    return;
+                perUser.Remove(animal.ID);
+                if (perUser.Count == 0)
+                    activeMarkers.Remove(user.Id);
+            }
+
+            try
+            {
+                marker.Remove(player);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug($"HunterTracking: marker removal failed: {ex.Message}");
+            }
+        }
+
         private void ClearHighlights(User user)
         {
             HashSet<Animal>? previous;
+            Dictionary<int, WorldMarker>? markers;
             lock (highlightsLock)
             {
                 activeHighlights.TryGetValue(user.Id, out previous);
                 if (previous != null)
                     activeHighlights.Remove(user.Id);
+                activeMarkers.TryGetValue(user.Id, out markers);
+                if (markers != null)
+                    activeMarkers.Remove(user.Id);
             }
 
             if (previous != null && user.ConstantHighlightSetting != null)
             {
                 foreach (var animal in previous)
                     user.ConstantHighlightSetting.TryRemove(animal, HighlightPurpose.Common);
+            }
+
+            if (markers != null && user.Player != null && user.Markers != null)
+            {
+                foreach (var marker in markers.Values)
+                {
+                    try { marker.Remove(user.Player); } catch { }
+                }
             }
         }
 
@@ -215,6 +337,11 @@ namespace HunterTracking
             {
                 return activeHighlights.TryGetValue(userId, out var set) ? set.Count : 0;
             }
+        }
+
+        private static Vector3i ToVector3i(Vector3 v)
+        {
+            return new Vector3i((int)Math.Floor(v.X), (int)Math.Floor(v.Y), (int)Math.Floor(v.Z));
         }
 
         public Task ShutdownAsync() => Task.CompletedTask;
